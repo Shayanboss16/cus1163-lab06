@@ -1,18 +1,15 @@
 package javapro;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ProducerConsumerLab {
 
-    /**
-     * SharedBuffer - Thread-safe bounded buffer (FULLY PROVIDED)
-     */
     static class SharedBuffer {
-        private final ArrayList<Integer> buffer;
+        private final List<Integer> buffer = new ArrayList<>();
         private final int capacity;
 
         public SharedBuffer(int capacity) {
-            this.buffer = new ArrayList<>();
             this.capacity = capacity;
             System.out.println("Buffer created with capacity: " + capacity);
         }
@@ -32,84 +29,65 @@ public class ProducerConsumerLab {
                 System.out.println("[Consumer] Buffer EMPTY - waiting...");
                 wait();
             }
-            int value = buffer.remove(0);
-            System.out.println("[Consumer] Consumed: " + value + " | Buffer: " + buffer);
+            int val = buffer.remove(0);
+            System.out.println("[Consumer] Consumed: " + val + " | Buffer: " + buffer);
             notifyAll();
-            return value;
+            return val;
         }
     }
 
-    /**
-     * TODO 1: Implement Producer class
-     * Create a class that implements Runnable and:
-     * 1. Has a private SharedBuffer field
-     * 2. Has a constructor that accepts SharedBuffer parameter
-     * 3. In run() method:
-     *    - Use try-catch for InterruptedException
-     *    - Loop 10 times (i from 0 to 9)
-     *    - Call buffer.produce(i) each iteration
-     *    - Print "[Producer] finished producing 10 items" when done
-     *    - In catch block, print "[Producer] was interrupted"
-     */
     static class Producer implements Runnable {
-        // TODO 1: Implement Producer class here
-        // Step 1: Add private SharedBuffer field
+        private final SharedBuffer buffer;
 
-        // Step 2: Add constructor
         public Producer(SharedBuffer buffer) {
-            // Initialize the buffer field
+            this.buffer = buffer;
         }
 
-        // Step 3: Implement run() method
         @Override
         public void run() {
-            // Add your implementation here
+            try {
+                for (int i = 0; i < 10; i++) {
+                    buffer.produce(i);
+                }
+                System.out.println("[Producer] finished producing 10 items");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
-    /**
-     * TODO 2: Implement Consumer class
-     */
     static class Consumer implements Runnable {
-        // TODO 2: Implement Consumer class here
-        // Step 1: Add private SharedBuffer field
+        private final SharedBuffer buffer;
 
-        // Step 2: Add constructor
         public Consumer(SharedBuffer buffer) {
-            // Initialize the buffer field
+            this.buffer = buffer;
         }
 
-        // Step 3: Implement run() method
         @Override
         public void run() {
-            // Add your implementation here
+            try {
+                for (int i = 0; i < 10; i++) {
+                    buffer.consume();
+                }
+                System.out.println("[Consumer] finished consuming 10 items");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
-    /**
-     * Main method (FULLY PROVIDED)
-     */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         SharedBuffer buffer = new SharedBuffer(5);
 
-        Producer producer = new Producer(buffer);
-        Consumer consumer = new Consumer(buffer);
+        Thread producer = new Thread(new Producer(buffer));
+        Thread consumer = new Thread(new Consumer(buffer));
 
-        Thread producerThread = new Thread(producer);
-        Thread consumerThread = new Thread(consumer);
+        producer.start();
+        consumer.start();
 
-        System.out.println();
-        producerThread.start();
-        consumerThread.start();
+        producer.join();
+        consumer.join();
 
-        try {
-            producerThread.join();
-            consumerThread.join();
-        } catch (InterruptedException e) {
-            System.out.println("Main thread interrupted");
-            return;
-        }
-
-        System.out.println("\nAll threads completed successfully!");
+        System.out.println("All threads completed successfully!");
     }
 }
